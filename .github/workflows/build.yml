@@ -18,8 +18,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
+
+      - name: Create placeholder icon if missing
+        shell: powershell
+        run: |
+          if (!(Test-Path "assets")) { New-Item -ItemType Directory -Path "assets" }
+          if (!(Test-Path "assets/icon.ico")) {
+            Invoke-WebRequest -Uri "https://raw.githubusercontent.com/electron/electron/main/shell/browser/resources/win/electron.ico" -OutFile "assets/icon.ico"
+            echo "Downloaded placeholder icon"
+          } else {
+            echo "Icon already exists"
+          }
 
       - name: Install dependencies
         run: npm ci
