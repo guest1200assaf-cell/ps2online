@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assaf Station</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Title bar -->
+  <div class="titlebar">
+    <span class="titlebar-title">Assaf Station</span>
+    <div class="titlebar-btns">
+      <button id="btn-settings" title="الإعدادات">⚙</button>
+      <button id="btn-minimize">─</button>
+      <button id="btn-maximize">⬜</button>
+      <button id="btn-close">✕</button>
+    </div>
+  </div>
+
+  <!-- Settings panel -->
+  <div id="settings-panel" class="settings-panel hidden">
+    <h3>إعدادات المحاكي</h3>
+    <div class="file-row">
+      <label>مسار المحاكي (تلقائي)</label>
+      <span id="pcsx2-path-label" class="file-label">لم يُحدد</span>
+      <button id="btn-pick-pcsx2" class="btn btn-ghost btn-small">تصفح</button>
+    </div>
+    <div class="file-row">
+      <label>مكتبة الألعاب</label>
+      <button id="btn-open-library-from-settings" class="btn btn-ghost btn-small">فتح</button>
+    </div>
+    <label class="settings-toggle">
+      <input type="checkbox" id="opt-fullscreen" checked />
+      <span>تشغيل اللعبة بالشاشة الكاملة</span>
+    </label>
+    <p class="hint">اللعبة تنطلق تلقائياً مع المحاكي بمجرد جاهزية الجسر</p>
+  </div>
+
+  <div class="bg-glow"></div>
+
+  <div class="container">
+    <header>
+      <div class="logo">
+        <span class="ps2-icon">PS2</span>
+        <span class="online-badge">ONLINE</span>
+      </div>
+      <p class="subtitle">العب مع صديقك — كل واحد على جهازه</p>
+    </header>
+
+    <!-- Step 0: Server URL (hidden) -->
+    <section id="step-server" class="card"></section>
+
+    <!-- Step emulator: Per-platform installer -->
+    <section id="step-emulator" class="card">
+      <h2>المحاكيات</h2>
+      <p class="hint">ثبّت المحاكي لكل منصّة تبي تلعب عليها (تقدر تخطي وتثبّت لاحقاً)</p>
+      <div id="emulator-list" class="emulator-list"></div>
+      <div class="btn-row">
+        <button id="btn-skip-install" class="btn btn-ghost">متابعة</button>
+      </div>
+    </section>
+
+    <!-- Step library: Game library + Store tabs -->
+    <section id="step-library" class="card">
+      <div class="library-head">
+        <h2>الألعاب</h2>
+        <span id="library-count" class="muted-count">0</span>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="my">مكتبتي</button>
+        <button class="tab" data-tab="store">المتجر</button>
+      </div>
+
+      <!-- Tab: My Library -->
+      <div id="tab-my" class="tab-panel active">
+        <div id="platform-filter" class="platform-filter"></div>
+        <div class="library-toolbar">
+          <input type="text" id="library-search" placeholder="بحث..." />
+          <button id="btn-add-game" class="btn btn-primary btn-small">+ إضافة</button>
+          <button id="btn-scan-folder" class="btn btn-ghost btn-small" title="فحص مجلد">📁</button>
+        </div>
+
+        <div id="library-empty" class="library-empty">
+          <div class="empty-icon">🎮</div>
+          <p>مكتبتك فاضية</p>
+          <p class="hint">أضف ملفات ألعابك (ISO/BIN) أو حمّل من المتجر</p>
+          <div class="btn-row">
+            <button id="btn-add-game-empty" class="btn btn-primary">+ إضافة لعبة</button>
+            <button id="btn-goto-store" class="btn btn-secondary">فتح المتجر</button>
+          </div>
+          <p class="legal-note">استخدم نسخك الأصلية فقط.</p>
+        </div>
+
+        <div id="library-grid" class="library-grid"></div>
+      </div>
+
+      <!-- Tab: Store -->
+      <div id="tab-store" class="tab-panel">
+        <div class="store-toolbar">
+          <input type="text" id="catalog-search" placeholder="بحث في المتجر..." />
+          <button id="btn-refresh-catalog" class="btn btn-ghost btn-small" title="تحديث">↻</button>
+          <button id="btn-catalog-settings" class="btn btn-ghost btn-small" title="مصدر المتجر">⚙</button>
+        </div>
+
+        <div id="catalog-source-panel" class="catalog-source hidden">
+          <label>رابط الكتالوج (JSON):</label>
+          <input type="text" id="catalog-url-input" placeholder="https://example.com/catalog.json" dir="ltr" />
+          <div class="btn-row">
+            <button id="btn-save-catalog-url" class="btn btn-primary btn-small">حفظ</button>
+            <button id="btn-clear-catalog-url" class="btn btn-ghost btn-small">المتجر الافتراضي</button>
+          </div>
+          <p class="hint">JSON لازم يكون: <code>{ "games": [{ "id":"...", "name":"...", "url":"..." }] }</code></p>
+        </div>
+
+        <div id="catalog-status" class="catalog-status">جاري التحميل...</div>
+        <div id="catalog-grid" class="library-grid"></div>
+      </div>
+
+      <div class="btn-row library-actions">
+        <button id="btn-library-continue" class="btn btn-primary" disabled>متابعة</button>
+      </div>
+    </section>
+
+    <!-- Step 1: Name -->
+    <section id="step-name" class="card">
+      <h2>ادخل اسمك</h2>
+      <div id="selected-game-pill" class="game-pill hidden">
+        <span class="game-pill-icon">🎮</span>
+        <span id="selected-game-name" class="game-pill-name">—</span>
+        <span id="selected-game-platform" class="plat-badge"></span>
+        <button id="btn-change-game" class="btn-icon" title="تغيير اللعبة">↺</button>
+      </div>
+      <div id="netplay-support-note" class="netplay-note hidden"></div>
+      <input type="text" id="player-name" placeholder="اسمك في اللعبة" maxlength="20" autocomplete="off" />
+      <div class="btn-row">
+        <button id="btn-create" class="btn btn-primary" disabled>إنشاء غرفة</button>
+        <button id="btn-join-toggle" class="btn btn-secondary" disabled>الانضمام لغرفة</button>
+      </div>
+      <button id="btn-play-local" class="btn btn-primary hidden">تشغيل محلي</button>
+    </section>
+
+    <!-- Step 1b: Join code -->
+    <section id="step-join" class="card">
+      <h2>ادخل كود الغرفة</h2>
+      <input type="text" id="room-code-input" placeholder="مثال: ABC123" maxlength="6" autocomplete="off" />
+      <div class="btn-row">
+        <button id="btn-join-confirm" class="btn btn-primary">انضم</button>
+        <button id="btn-join-back" class="btn btn-ghost">رجوع</button>
+      </div>
+    </section>
+
+    <!-- Step 2: Waiting -->
+    <section id="step-waiting" class="card">
+      <h2>غرفة الانتظار</h2>
+      <div class="room-code-display">
+        <span class="label">كود الغرفة</span>
+        <span id="display-code" class="code">------</span>
+        <button id="btn-copy" class="btn btn-ghost btn-small">نسخ</button>
+      </div>
+      
+      <div class="voice-controls" style="margin-bottom: 15px; text-align: center;">
+        <button id="btn-toggle-mic" class="btn btn-ghost btn-small" style="color: #ff4444;">🎤 المايك مغلق</button>
+      </div>
+
+      <div class="players-row" id="waiting-players-row" style="flex-wrap: wrap; justify-content: center;">
+        <!-- يتم تحديثه برمجياً لدعم لاعبين أو 4 أو 8 -->
+      </div>
+
+      <div id="chat-container" class="chat-container" style="margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;">
+        <div id="chat-messages" class="chat-messages" style="height: 120px; overflow-y: auto; margin-bottom: 10px; font-size: 0.8rem;"></div>
+        <div class="chat-input-row" style="display: flex; gap: 5px;">
+          <input type="text" id="chat-input" placeholder="اكتب رسالة..." style="flex: 1;" autocomplete="off" />
+          <button id="btn-send-chat" class="btn btn-primary btn-small">إرسال</button>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top: 15px;">
+        <button id="btn-host-start-game" class="btn btn-primary hidden">بدء اللعبة الان</button>
+      </div>
+      <p class="hint">شارك الكود مع أصدقائك للانضمام للغرفة</p>
+    </section>
+
+    <!-- Step 3: Bridge active -->
+    <section id="step-bridge" class="card">
+      <h2>الجسر نشط</h2>
+      <div class="players-row">
+        <div class="player-slot">
+          <div class="avatar green">1</div>
+          <span id="bridge-host-name">—</span>
+          <span class="badge">مضيف</span>
+        </div>
+        <div class="vs green">VS</div>
+        <div class="player-slot">
+          <div class="avatar green">2</div>
+          <span id="bridge-guest-name">—</span>
+        </div>
+      </div>
+
+      <!-- Bridge status -->
+      <div class="bridge-status-box">
+        <div class="status-row">
+          <div class="status-dot" id="bridge-dot"></div>
+          <span id="bridge-status-label">جاري التشغيل...</span>
+        </div>
+        <div id="bridge-log" class="bridge-log"></div>
+      </div>
+
+      <!-- P2P Download Section -->
+      <div id="p2p-download-section" class="card hidden" style="margin-top: 10px; background: rgba(0, 40, 100, 0.6); border-color: var(--blue-glow);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+          <div>
+            <h4 style="color: var(--gold); margin-bottom: 4px; font-size: 0.9rem;">اللعبة غير متوفرة لديك!</h4>
+            <p style="font-size: 0.75rem; color: var(--text);">المضيف يلعب لعبة غير موجودة في مكتبتك. يمديك تحملها الآن (P2P).</p>
+          </div>
+          <button id="btn-p2p-download" class="btn btn-primary btn-small">تحميل</button>
+        </div>
+        <div id="p2p-progress-wrap" class="hidden" style="margin-top: 10px;">
+          <div class="progress-bar-track"><div id="p2p-progress-fill" class="progress-bar-fill" style="width: 0%;"></div></div>
+          <div id="p2p-progress-text" style="font-size: 0.75rem; text-align: center; margin-top: 5px;">جاري الاتصال...</div>
+        </div>
+      </div>
+
+      <!-- PCSX2 instruction -->
+      <div id="pcsx2-hint" class="pcsx2-hint hidden">
+        <span id="pcsx2-hint-text">افتح PCSX2 ← Netplay ← Join ←</span>
+        <code>127.0.0.1:7777</code>
+      </div>
+
+      <!-- Animated step-by-step guide -->
+      <div id="netplay-guide" class="netplay-guide hidden">
+        <div class="guide-header">
+          <span id="guide-title">خطوات إعداد Netplay</span>
+          <button id="btn-toggle-guide" class="btn-icon" title="إخفاء">▾</button>
+        </div>
+        <div id="guide-steps" class="guide-steps">
+          <div class="guide-step" data-idx="0">
+            <div class="step-num">1</div>
+            <div class="step-text" id="guide-text-0"></div>
+          </div>
+          <div class="guide-step" data-idx="1">
+            <div class="step-num">2</div>
+            <div class="step-text" id="guide-text-1"></div>
+          </div>
+          <div class="guide-step" data-idx="2">
+            <div class="step-num">3</div>
+            <div class="step-text" id="guide-text-2"></div>
+          </div>
+          <div class="guide-step" data-idx="3">
+            <div class="step-num">4</div>
+            <div class="step-text" id="guide-text-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="bridge-game-pill" class="game-pill hidden">
+        <span class="game-pill-icon">🎮</span>
+        <span id="bridge-game-name" class="game-pill-name">—</span>
+      </div>
+
+      <button id="btn-launch-pcsx2" class="btn btn-primary hidden">تشغيل اللعبة الآن</button>
+
+      <button id="btn-leave" class="btn btn-ghost btn-small">مغادرة</button>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
